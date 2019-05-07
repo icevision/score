@@ -3,7 +3,7 @@ name = "icevision-score"
 version = "0.1.0"
 authors = ["Artyom Pavlov <newpavlov@gmail.com>"]
 license = "MIT OR Apache-2.0"
-description = "IceVision competition scoring software"
+description = "Scoring software used in the IceVision competition"
 repository = "https://github.com/icevision/score"
 edition = "2018"
 
