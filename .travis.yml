@@ -1,0 +1,6 @@
+language: rust
+rust: stable
+script:
+  - cargo test
+  - cargo run file_examples/solution1.tsv file_examples/good.tsv
+cache: cargo
