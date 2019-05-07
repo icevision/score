@@ -179,14 +179,16 @@ fn compute_score(item: IndexItem) -> ScoreStats {
 
     let mut selected_hits = vec![];
     while hits.len() != 0 {
+        // find hit with a maximum IoU
         let max = *hits.iter()
             .max_by(|Hit { iou: a, .. }, Hit { iou: b, .. }| {
-                // we know that there is no NaNs
+                // we know that there are no NaNs
                 a.partial_cmp(b).unwrap()
             })
             // vector contains at least one element
             .unwrap();
         selected_hits.push(max);
+        // remove hits which use selected ground truth and solution
         hits.retain(|h| h.gt_idx != max.gt_idx && h.sol_idx != max.sol_idx);
     }
 
