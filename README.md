@@ -3,16 +3,35 @@
 Scoring software used in the IceVision competition.
 
 ## Usage example
+We will use `training/` folder from [annotations] repository.
 ```sh
 $ cargo build --release
-$ ./target/release/icevision-score file_examples/solution1.tsv file_examples/good.tsv
-Total score:    2.447
-Penalty:        0.000
-Score 5.19:     1.666
-Score 3.1:      0.781
-Penalty 5.19:   0.000
+$ ./icevision-score annotations/training/ file_examples/good.tsv
+Total score:    1.783
+Total penalty:  0.000
+Score 2.1:  0.000
+Score 2.4:  0.783
+Score 3.1:  0.000
+Score 3.24: 0.000
+Score 3.27: 0.000
+Score 4.1:  1.000
+Score 4.2:  0.000
+Score 5.19: 0.000
+Score 5.20: 0.000
+Score 8.22: 0.000
+Penalty 2.1:    0.000
+Penalty 2.4:    0.000
 Penalty 3.1:    0.000
+Penalty 3.24:   0.000
+Penalty 3.27:   0.000
+Penalty 4.1:    0.000
+Penalty 4.2:    0.000
+Penalty 5.19:   0.000
+Penalty 5.20:   0.000
+Penalty 8.22:   0.000
 ```
+
+[annotations]: https://github.com/icevision/annotations/
 
 ## License
 
