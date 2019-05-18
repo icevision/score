@@ -14,5 +14,5 @@ serde_derive = "1"
 serde = "1"
 log = "0.4"
 
-[profile.release]
-lto = true
+#[profile.release]
+#lto = true

@@ -1,6 +1,6 @@
 use log::debug;
 
-use crate::consts::{CLASSES_N, ALLOWED_CLASSES, FP_PENALTY};
+use crate::consts::{CLASSES_N, ALLOWED_CLASSES, FP_PENALTY, IOU_BOT, IOU_TOP};
 use crate::read::{RoadSign, IndexItem};
 
 /// Solution score and statistics.
@@ -26,15 +26,15 @@ impl ScoreStats {
 
 /// Compute Intersection Over Union for two bounding boxes.
 fn compute_iou(s1: &RoadSign, s2: &RoadSign) -> f32 {
-    let a1 = (s1.x2 - s1.x1)*(s1.y2 - s1.y1);
-    let a2 = (s2.x2 - s2.x1)*(s2.y2 - s2.y1);
+    let a1 = (s1.xbr - s1.xtl)*(s1.ybr - s1.ytl);
+    let a2 = (s2.xbr - s2.xtl)*(s2.ybr - s2.ytl);
 
-    let x1 = s1.x1.max(s2.x1);
-    let x2 = s1.x2.min(s2.x2);
-    let y1 = s1.y1.max(s2.y1);
-    let y2 = s1.y2.min(s2.y2);
-    if x1 < x2 && y1 < y2 {
-        let inters = (x2 - x1)*(y2 - y1);
+    let xtl = s1.xtl.max(s2.xtl);
+    let xbr = s1.xbr.min(s2.xbr);
+    let ytl = s1.ytl.max(s2.ytl);
+    let ybr = s1.ybr.min(s2.ybr);
+    if xtl < xbr && ytl < ybr {
+        let inters = (xbr - xtl)*(ybr - ytl);
         inters/(a1 + a2 - inters)
     } else {
         0.0
@@ -43,8 +43,14 @@ fn compute_iou(s1: &RoadSign, s2: &RoadSign) -> f32 {
 
 /// Convert IoU to score.
 fn iou2score(iou: f32) -> f32 {
-    assert!(iou >= 0.5 && iou <= 1.);
-    (2.*iou - 1.).sqrt().sqrt()
+    if iou > IOU_TOP {
+        1.0
+    } else if iou > IOU_BOT {
+        (2.*iou - 1.).sqrt().sqrt()
+    } else {
+        panic!("expected IoU to be bigger than IOU_BOT");
+    }
+
 }
 
 /// Find index of the given sign class.
@@ -67,12 +73,10 @@ pub fn compute_score(item: IndexItem) -> ScoreStats {
         for (sol_idx, sol_item) in solutions.iter().enumerate() {
             if gt_item.class != sol_item.class { continue; }
             let iou = compute_iou(gt_item, sol_item);
-            if iou < 0.5 { continue; }
+            if iou < IOU_BOT { continue; }
             hits.push(Hit { gt_idx, sol_idx, iou } )
         }
     }
-
-    debug!("hits: {:?}", hits);
 
     let mut selected_hits = vec![];
     while hits.len() != 0 {

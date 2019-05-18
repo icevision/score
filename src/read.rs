@@ -1,5 +1,5 @@
-use std::io::BufReader;
-use std::fs::File;
+use std::io::{self, BufReader};
+use std::fs::{self, File};
 use std::path::Path;
 use std::collections::HashMap;
 use serde_derive::Deserialize;
@@ -12,10 +12,10 @@ type Reader = csv::Reader<BufReader<File>>;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct RoadSign {
-    pub x1: f32,
-    pub y1: f32,
-    pub x2: f32,
-    pub y2: f32,
+    pub xtl: f32,
+    pub ytl: f32,
+    pub xbr: f32,
+    pub ybr: f32,
     pub class: String,
 }
 
@@ -33,23 +33,23 @@ struct Record {
 
 /// Checks bounding box coordinates and sign class.
 fn check_sign(sign: &RoadSign) -> Result<()> {
-    if !sign.x1.is_finite() {
-        Err(format!("x1 is not finite: {}", sign.x1))?;
+    if !sign.xtl.is_finite() {
+        Err(format!("xtl is not finite: {}", sign.xtl))?;
     }
-    if !sign.x2.is_finite() {
-        Err(format!("x2 is not finite: {}", sign.x2))?;
+    if !sign.xbr.is_finite() {
+        Err(format!("xbr is not finite: {}", sign.xbr))?;
     }
-    if sign.x1 > sign.x2 {
-        Err(format!("x1 is bigger than x2: {} {}", sign.x1, sign.x2))?;
+    if sign.xtl > sign.xbr {
+        Err(format!("xtl is bigger than xbr: {} {}", sign.xtl, sign.xbr))?;
     }
-    if !sign.y1.is_finite() {
-        Err(format!("y1 is not finite: {}", sign.y1))?;
+    if !sign.ytl.is_finite() {
+        Err(format!("ytl is not finite: {}", sign.ytl))?;
     }
-    if !sign.y2.is_finite() {
-        Err(format!("y2 is not finite: {}", sign.y2))?;
+    if !sign.ybr.is_finite() {
+        Err(format!("ybr is not finite: {}", sign.ybr))?;
     }
-    if sign.y1 > sign.y2 {
-        Err(format!("y1 is bigger than y2: {} {}", sign.y1, sign.y2))?;
+    if sign.ytl > sign.ybr {
+        Err(format!("ytl is bigger than ybr: {} {}", sign.ytl, sign.ybr))?;
     }
     if !ALLOWED_CLASSES.contains(&sign.class.as_str()) {
         Err(format!("invalid sign class: {}", sign.class))?;
@@ -57,31 +57,68 @@ fn check_sign(sign: &RoadSign) -> Result<()> {
     Ok(())
 }
 
-/// Default TSV reader.
-fn default_reader(path: &Path) -> Result<Reader> {
-    let gt_reader = BufReader::new(File::open(path)?);
+/// Ground truth TSV reader.
+fn gt_reader(path: &Path) -> Result<Reader> {
+    let reader = BufReader::new(File::open(path)?);
     let rdr = csv::ReaderBuilder::new()
-        .has_headers(false)
+        .has_headers(true)
         .delimiter(b'\t')
-        .from_reader(gt_reader);
+        .from_reader(reader);
     Ok(rdr)
+}
+
+/// Convert road sign to one used for online stage.
+///
+/// Returns `None` if sign is not used in online stage.
+fn convert_sign(mut s: RoadSign) -> Option<RoadSign> {
+    if s.class.starts_with("4.1") { s.class = "4.1".to_string(); }
+    if s.class.starts_with("4.2") { s.class = "4.2".to_string(); }
+    if s.class.starts_with("5.19") { s.class = "5.19".to_string(); }
+    if ALLOWED_CLASSES.contains(&s.class.as_str()) {
+        Some(s)
+    } else {
+        None
+    }
 }
 
 /// Read ground truth and solution files.
 pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
     let mut index = SignIndex::new();
 
-    let mut gt_rdr = default_reader(gt_path)?;
-    for record in gt_rdr.deserialize() {
-        let Record { frame, sign } = record?;
-        check_sign(&sign)?;
-        index.entry(frame)
-            .or_insert_with(Default::default)
-            .gtruth
-            .push(sign);
+    for entry in fs::read_dir(gt_path)? {
+        let path = entry?.path();
+        let set_name = path.file_name()
+            .and_then(|v| v.to_str())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
+                "failed to derive set name from directory name"))?;
+        for entry in fs::read_dir(&path)? {
+            let path = &entry?.path();
+            let mut gt_rdr = gt_reader(path)?;
+            let frame = path.file_stem()
+                .and_then(|v| v.to_str())
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
+                    "failed to get frame name"))?;
+            let frame = [set_name, frame].join("/");
+
+            let entry = &mut index.entry(frame)
+                    .or_insert_with(Default::default)
+                    .gtruth;
+            for record in gt_rdr.deserialize() {
+                let sign = match convert_sign(record?) {
+                    Some(s) => s,
+                    None => continue,
+                };
+                check_sign(&sign)?;
+                entry.push(sign);
+            }
+        }
     }
 
-    let mut sol_rdr = default_reader(sol_path)?;
+    let reader = BufReader::new(File::open(sol_path)?);
+    let mut sol_rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .delimiter(b'\t')
+        .from_reader(reader);
     for record in sol_rdr.deserialize() {
         let Record { frame, sign } = record?;
         check_sign(&sign)?;
