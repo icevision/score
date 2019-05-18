@@ -2,6 +2,45 @@
 
 Scoring software used in the IceVision competition.
 
+## Scoring methodology
+
+During online stage participants have to detect the following traffic signs:
+
+| Code | Image   | Description |
+| -----|:-------:| :----------:|
+| 2.1  | ![2.1]  | Main road |
+| 2.4  | ![2.4]  | Yield road |
+| 3.1  | ![3.1]  | No entry |
+| 3.24 | ![3.24] | Maximum speed limit |
+| 3.27 | ![3.27] | No stopping |
+| 4.1 | ![4.1.1] ![4.1.2] ![4.1.3] <br/>![4.1.4] ![4.1.5] ![4.1.6] | Proceed in the given direction |
+| 4.2 | ![4.2.1] ![4.2.2] ![4.2.3] | Pass on the given side |
+| 5.19 | ![5.19.1] ![5.19.2] | Pedestrian crossing |
+| 5.20 | ![5.20] | Road bump |
+| 8.22 | ![8.22.1] ![8.22.2] ![8.22.3] | Obstacle |
+
+[2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2.1_Russian_road_sign.svg/100px-2.1_Russian_road_sign.svg.png
+[2.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/2.4_Russian_road_sign.svg/100px-2.4_Russian_road_sign.svg.png
+[3.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/3.1_Russian_road_sign.svg/100px-3.1_Russian_road_sign.svg.png
+[3.24]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/3.24_Russian_road_sign.svg/100px-3.24_Russian_road_sign.svg.png
+[3.27]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/3.27_Russian_road_sign.svg/100px-3.27_Russian_road_sign.svg.png
+[4.1.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/4.1.1_Russian_road_sign.svg/100px-4.1.1_Russian_road_sign.svg.png
+[4.1.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/4.1.2_Russian_road_sign.svg/100px-4.1.2_Russian_road_sign.svg.png
+[4.1.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/4.1.3_Russian_road_sign.svg/100px-4.1.3_Russian_road_sign.svg.png
+[4.1.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/4.1.4_Russian_road_sign.svg/100px-4.1.4_Russian_road_sign.svg.png
+[4.1.5]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/4.1.5_Russian_road_sign.svg/100px-4.1.5_Russian_road_sign.svg.png
+[4.1.6]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/4.1.6_Russian_road_sign.svg/100px-4.1.6_Russian_road_sign.svg.png
+[4.2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/4.2.1_Russian_road_sign.svg/100px-4.2.1_Russian_road_sign.svg.png
+[4.2.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/4.2.2_Russian_road_sign.svg/100px-4.2.2_Russian_road_sign.svg.png
+[4.2.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/4.2.3_Russian_road_sign.svg/100px-4.2.3_Russian_road_sign.svg.png
+[5.19.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/5.19.1_Russian_road_sign.svg/100px-5.19.1_Russian_road_sign.svg.png
+[5.19.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/5.19.2_Russian_road_sign.svg/100px-5.19.2_Russian_road_sign.svg.png
+[5.20]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/5.20_Russian_road_sign.svg/100px-5.20_Russian_road_sign.svg.png
+[8.22.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/8.22.1_Russian_road_sign.svg/40px-8.22.1_Russian_road_sign.svg.png
+[8.22.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/8.22.2_Russian_road_sign.svg/40px-8.22.2_Russian_road_sign.svg.png
+[8.22.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/8.22.3_Russian_road_sign.svg/40px-8.22.3_Russian_road_sign.svg.png
+
+
 ## Building
 Scoring software is written in Rust, so you'll need to grab a
 [Rust installation] in order to compile it. In general, we use the latest
