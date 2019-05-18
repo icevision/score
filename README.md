@@ -2,11 +2,39 @@
 
 Scoring software used in the IceVision competition.
 
-## Usage example
-We will use `training/` folder from [annotations] repository.
-```sh
+## Building
+Scoring software is written in Rust, so you'll need to grab a
+[Rust installation] in order to compile it. In general, we use the latest
+stable release of the Rust compiler, but older versions may work as well.
+
+```
+$ git clone https://github.com/BurntSushi/ripgrep
+$ cd ripgrep
 $ cargo build --release
-$ ./icevision-score annotations/training/ file_examples/good.tsv
+$ ./target/release/icevision-score --help
+convert 0.1.0
+Artyom Pavlov <newpavlov@gmail.com>
+IceVision competition scoring software
+
+USAGE:
+    icevision-score <ground_truth> <solution>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <ground_truth>    Path to a directory with ground truth TSV files.
+    <solution>        Path to a solution TSV file.
+```
+
+
+[Rust installation]: https://www.rust-lang.org/
+
+## Usage example
+For ground truth we use some files from [annotations] repository.
+```
+$ ./icevision-score examples/ground_truth/ examples/good.tsv
 Total score:    1.783
 Total penalty:  0.000
 Score 2.1:  0.000
