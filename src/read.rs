@@ -26,9 +26,25 @@ pub struct IndexItem {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-struct Record {
+struct SolutionRecord {
     frame: String,
-    sign: RoadSign,
+    xtl: f32,
+    ytl: f32,
+    xbr: f32,
+    ybr: f32,
+    class: String,
+}
+
+impl SolutionRecord {
+    fn split(self) -> (String, RoadSign) {
+        (self.frame, RoadSign {
+            xtl: self.xtl,
+            ytl: self.ytl,
+            xbr: self.xbr,
+            ybr: self.ybr,
+            class: self.class,
+        })
+    }
 }
 
 /// Checks bounding box coordinates and sign class.
@@ -116,11 +132,12 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
 
     let reader = BufReader::new(File::open(sol_path)?);
     let mut sol_rdr = csv::ReaderBuilder::new()
-        .has_headers(false)
+        .has_headers(true)
         .delimiter(b'\t')
         .from_reader(reader);
     for record in sol_rdr.deserialize() {
-        let Record { frame, sign } = record?;
+        let record: SolutionRecord = record?;
+        let (frame, sign) = record.split();
         check_sign(&sign)?;
         if let Some(item) = index.get_mut(&frame) {
             item.solutions.push(sign);
