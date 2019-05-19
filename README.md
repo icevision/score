@@ -6,6 +6,9 @@ Scoring software used in the IceVision competition.
 
 During online stage participants have to detect the following traffic signs:
 
+<details>
+  <summary>Click to expand table</summary>
+
 | Code | Image   | Description |
 | -----|:-------:| :----------:|
 | 2.1  | ![2.1]  | Main road |
@@ -18,6 +21,7 @@ During online stage participants have to detect the following traffic signs:
 | 5.19 | ![5.19.1] ![5.19.2] | Pedestrian crossing |
 | 5.20 | ![5.20] | Road bump |
 | 8.22 | ![8.22.1] ![8.22.2] ![8.22.3] | Obstacle |
+</details>
 
 [2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2.1_Russian_road_sign.svg/100px-2.1_Russian_road_sign.svg.png
 [2.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/2.4_Russian_road_sign.svg/100px-2.4_Russian_road_sign.svg.png
