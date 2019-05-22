@@ -2,7 +2,7 @@ use structopt::StructOpt;
 use std::path::PathBuf;
 
 #[derive(StructOpt)]
-#[structopt(name = "convert",
+#[structopt(name = "icevision-score",
     about = "IceVision competition scoring software")]
 pub struct Cli {
     /// Path to a directory with ground truth TSV files.

@@ -52,11 +52,11 @@ Scoring software is written in Rust, so you'll need to grab a
 stable release of the Rust compiler, but older versions may work as well.
 
 ```
-$ git clone https://github.com/BurntSushi/ripgrep
+$ git clone https://github.com/icevision/score
 $ cd ripgrep
 $ cargo build --release
 $ ./target/release/icevision-score --help
-convert 0.1.0
+icevision-score 0.1.0
 Artyom Pavlov <newpavlov@gmail.com>
 IceVision competition scoring software
 
