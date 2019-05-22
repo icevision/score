@@ -34,6 +34,8 @@ During online stage participants have to detect the following traffic signs:
 | 5.19 | ![5.19.1] ![5.19.2] | Pedestrian crossing |
 | 5.20 | ![5.20] | Road bump |
 | 8.22 | ![8.22.1] ![8.22.2] ![8.22.3] | Obstacle |
+
+Traffic sign images: © Wikimedia Commons Contributors / CC-BY-SA-3.0
 </details>
 
 Detection is considered successful if [IoU] is bigger or equal to 0.5 and bounding box has a correct class code. If sign is detected twice, then detection with a smallest IoU will be counted as a false positive. Each false positive or incorrect detection results in penalty equal to 2 points.
