@@ -4,7 +4,16 @@ Scoring software used in the IceVision competition.
 
 ## Input file formats
 
-TODO
+For ground truth we use the same format [annotations] repository.
+
+For solutions we use a slightly different TSV (tab-separated values) file format. It contains all detected traffic signs of given classes on provided frame sequences. A solution file must contain header and the following fields:
+- `frame`: sequence + frame number, e.g. `2018-02-13_1418_left/000032`.
+- `xtl`, `ytl`, `xbr`, `ybr`: bounding box coordinates, integer or float. Note: `xtl` must be bigger than `xbr` and `ytl` must be bigger than `ybr`
+- `class`: traffic sign code. Valid values are: `2.1`, `2.4`, `3.1`, `3.24`, `3.27`, `4.1`, `4.2`, `5.19`, `5.20`, `8.22`.
+
+Some examples can be found in [`examples/`] folder.
+
+[`examples/`]: https://github.com/icevision/score/tree/master/src
 
 ## Scoring methodology
 
@@ -32,6 +41,8 @@ Detection is considered successful if [IoU] is bigger or equal to 0.5 and boundi
 If IoU of a true positive detection is bigger than 0.85, it results in adding 1 point to final result. Otherwise points are calculated as `((IoU - 0.5)/0.35)^0.25`.
 
 The final score is computed as sum of all true positive points minus all penalties.
+
+For exact algorithm, please, refer to the code.
 
 [IoU]: https://en.wikipedia.org/wiki/Jaccard_index
 
