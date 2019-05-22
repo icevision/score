@@ -46,7 +46,7 @@ fn iou2score(iou: f32) -> f32 {
     if iou > IOU_TOP {
         1.0
     } else if iou > IOU_BOT {
-        (2.*iou - 1.).sqrt().sqrt()
+        ((iou - IOU_BOT)/(IOU_TOP - IOU_BOT)).sqrt().sqrt()
     } else {
         panic!("expected IoU to be bigger than IOU_BOT");
     }

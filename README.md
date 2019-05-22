@@ -2,6 +2,10 @@
 
 Scoring software used in the IceVision competition.
 
+## Input file formats
+
+TODO
+
 ## Scoring methodology
 
 During online stage participants have to detect the following traffic signs:
@@ -23,27 +27,13 @@ During online stage participants have to detect the following traffic signs:
 | 8.22 | ![8.22.1] ![8.22.2] ![8.22.3] | Obstacle |
 </details>
 
-[2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2.1_Russian_road_sign.svg/100px-2.1_Russian_road_sign.svg.png
-[2.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/2.4_Russian_road_sign.svg/100px-2.4_Russian_road_sign.svg.png
-[3.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/3.1_Russian_road_sign.svg/100px-3.1_Russian_road_sign.svg.png
-[3.24]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/3.24_Russian_road_sign.svg/100px-3.24_Russian_road_sign.svg.png
-[3.27]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/3.27_Russian_road_sign.svg/100px-3.27_Russian_road_sign.svg.png
-[4.1.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/4.1.1_Russian_road_sign.svg/100px-4.1.1_Russian_road_sign.svg.png
-[4.1.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/4.1.2_Russian_road_sign.svg/100px-4.1.2_Russian_road_sign.svg.png
-[4.1.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/4.1.3_Russian_road_sign.svg/100px-4.1.3_Russian_road_sign.svg.png
-[4.1.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/4.1.4_Russian_road_sign.svg/100px-4.1.4_Russian_road_sign.svg.png
-[4.1.5]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/4.1.5_Russian_road_sign.svg/100px-4.1.5_Russian_road_sign.svg.png
-[4.1.6]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/4.1.6_Russian_road_sign.svg/100px-4.1.6_Russian_road_sign.svg.png
-[4.2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/4.2.1_Russian_road_sign.svg/100px-4.2.1_Russian_road_sign.svg.png
-[4.2.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/4.2.2_Russian_road_sign.svg/100px-4.2.2_Russian_road_sign.svg.png
-[4.2.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/4.2.3_Russian_road_sign.svg/100px-4.2.3_Russian_road_sign.svg.png
-[5.19.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/5.19.1_Russian_road_sign.svg/100px-5.19.1_Russian_road_sign.svg.png
-[5.19.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/5.19.2_Russian_road_sign.svg/100px-5.19.2_Russian_road_sign.svg.png
-[5.20]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/5.20_Russian_road_sign.svg/100px-5.20_Russian_road_sign.svg.png
-[8.22.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/8.22.1_Russian_road_sign.svg/40px-8.22.1_Russian_road_sign.svg.png
-[8.22.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/8.22.2_Russian_road_sign.svg/40px-8.22.2_Russian_road_sign.svg.png
-[8.22.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/8.22.3_Russian_road_sign.svg/40px-8.22.3_Russian_road_sign.svg.png
+Detection is considered successful if [IoU] is bigger or equal to 0.5 and bounding box has a correct class code. If sign is detected twice, then detection with a smallest IoU will be counted as a false positive. Each false positive or incorrect detection results in penalty equal to 2 points.
 
+If IoU of a true positive detection is bigger than 0.85, it results in adding 1 point to final result. Otherwise points are calculated as `((IoU - 0.5)/0.35)^0.25`.
+
+The final score is computed as sum of all true positive points minus all penalties.
+
+[IoU]: https://en.wikipedia.org/wiki/Jaccard_index
 
 ## Building
 Scoring software is written in Rust, so you'll need to grab a
@@ -118,3 +108,24 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
+
+[2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2.1_Russian_road_sign.svg/100px-2.1_Russian_road_sign.svg.png
+[2.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/2.4_Russian_road_sign.svg/100px-2.4_Russian_road_sign.svg.png
+[3.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/3.1_Russian_road_sign.svg/100px-3.1_Russian_road_sign.svg.png
+[3.24]: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/3.24_Russian_road_sign.svg/100px-3.24_Russian_road_sign.svg.png
+[3.27]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/3.27_Russian_road_sign.svg/100px-3.27_Russian_road_sign.svg.png
+[4.1.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/4.1.1_Russian_road_sign.svg/100px-4.1.1_Russian_road_sign.svg.png
+[4.1.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/4.1.2_Russian_road_sign.svg/100px-4.1.2_Russian_road_sign.svg.png
+[4.1.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/4.1.3_Russian_road_sign.svg/100px-4.1.3_Russian_road_sign.svg.png
+[4.1.4]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/4.1.4_Russian_road_sign.svg/100px-4.1.4_Russian_road_sign.svg.png
+[4.1.5]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/4.1.5_Russian_road_sign.svg/100px-4.1.5_Russian_road_sign.svg.png
+[4.1.6]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/4.1.6_Russian_road_sign.svg/100px-4.1.6_Russian_road_sign.svg.png
+[4.2.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/4.2.1_Russian_road_sign.svg/100px-4.2.1_Russian_road_sign.svg.png
+[4.2.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/4.2.2_Russian_road_sign.svg/100px-4.2.2_Russian_road_sign.svg.png
+[4.2.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/4.2.3_Russian_road_sign.svg/100px-4.2.3_Russian_road_sign.svg.png
+[5.19.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/5.19.1_Russian_road_sign.svg/100px-5.19.1_Russian_road_sign.svg.png
+[5.19.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/5.19.2_Russian_road_sign.svg/100px-5.19.2_Russian_road_sign.svg.png
+[5.20]: https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/5.20_Russian_road_sign.svg/100px-5.20_Russian_road_sign.svg.png
+[8.22.1]: https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/8.22.1_Russian_road_sign.svg/40px-8.22.1_Russian_road_sign.svg.png
+[8.22.2]: https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/8.22.2_Russian_road_sign.svg/40px-8.22.2_Russian_road_sign.svg.png
+[8.22.3]: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/8.22.3_Russian_road_sign.svg/40px-8.22.3_Russian_road_sign.svg.png
