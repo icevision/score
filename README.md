@@ -4,7 +4,7 @@ Scoring software used in the IceVision competition.
 
 ## Input file formats
 
-For ground truth we use the same format [annotations] repository.
+For ground truth we use exactly the same format as in the [annotations] repository.
 
 For solutions we use a slightly different TSV (tab-separated values) file format. It contains all detected traffic signs of given classes on provided frame sequences. A solution file must contain header and the following fields:
 - `frame`: sequence + frame number, e.g. `2018-02-13_1418_left/000032`.
