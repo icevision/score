@@ -139,6 +139,10 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
         let record: SolutionRecord = record?;
         let (frame, sign) = record.split();
         check_sign(&sign)?;
+        // ignore signs with area smaller than 100 pixels
+        if (sign.xbr - sign.xtl)*(sign.xbr - sign.xtl) < 100. {
+            continue;
+        }
         if let Some(item) = index.get_mut(&frame) {
             item.solutions.push(sign);
         }

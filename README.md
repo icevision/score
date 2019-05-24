@@ -4,7 +4,8 @@ Scoring software used in the IceVision competition.
 
 ## Input file formats
 
-For ground truth we use exactly the same format as in the [annotations] repository.
+For ground truth we use exactly the same format as in the [annotations]
+repository.
 
 For solutions we use a slightly different TSV (tab-separated values) file format. It contains all detected traffic signs of given classes on provided frame sequences. A solution file must contain header and the following fields:
 - `frame`: sequence + frame number, e.g. `2018-02-13_1418_left/000032`.
@@ -38,9 +39,15 @@ During online stage participants have to detect the following traffic signs:
 Traffic sign images: © Wikimedia Commons Contributors / CC-BY-SA-3.0
 </details>
 
-Detection is considered successful if [IoU] is bigger or equal to 0.5 and bounding box has a correct class code. If sign is detected twice, then detection with a smallest IoU will be counted as a false positive. Each false positive or incorrect detection results in penalty equal to 2 points.
+Bounding boxes with an area smaller than 100 pixels are ignored during
+evaluation. Detection is considered successful if [IoU] is bigger or equal to
+0.5 and bounding box has a correct class code. If sign is detected twice, then
+detection with a smallest IoU will be counted as a false positive. Each false
+positive or incorrect detection results in penalty equal to 2 points.
 
-If IoU of a true positive detection is bigger than 0.85, it results in adding 1 point to final result. Otherwise points are calculated as `((IoU - 0.5)/0.35)^0.25`.
+If IoU of a true positive detection is bigger than 0.85, it results in adding
+1 point to final result. Otherwise points are calculated as
+`((IoU - 0.5)/0.35)^0.25`.
 
 The final score is computed as sum of all true positive points minus all penalties.
 
