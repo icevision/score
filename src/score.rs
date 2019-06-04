@@ -45,12 +45,12 @@ fn compute_iou(s1: &RoadSign, s2: &RoadSign) -> f32 {
 fn iou2score(iou: f32) -> f32 {
     if iou > IOU_TOP {
         1.0
-    } else if iou > IOU_BOT {
+    } else if iou >= IOU_BOT {
         ((iou - IOU_BOT)/(IOU_TOP - IOU_BOT)).sqrt().sqrt()
     } else {
+        println!("{:?}", iou);
         panic!("expected IoU to be bigger than IOU_BOT");
     }
-
 }
 
 /// Find index of the given sign class.
