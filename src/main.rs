@@ -15,7 +15,8 @@ fn main() -> Result<()> {
     let index = read::read_files(&opt.ground_truth, &opt.solution)?;
 
     let mut stats = ScoreStats::default();
-    for (_, item) in index {
+    let iter = index.into_iter().map(|v| v.1).filter(|v| v.solutions.len() != 0);
+    for item in iter {
         stats.update(compute_score(item));
     }
 
