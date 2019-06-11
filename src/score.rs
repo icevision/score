@@ -63,7 +63,6 @@ fn find_class_idx(class: &str) -> Option<usize> {
 /// Compute score stats for given frame.
 pub fn compute_score(item: IndexItem) -> ScoreStats {
     let IndexItem { gtruth, solutions } = item;
-    println!("{:#?}\n\n{:#?}", gtruth, solutions);
 
     #[derive(Debug, Clone, Copy)]
     struct Hit { gt_idx: usize, sol_idx: usize, iou: f32 }
