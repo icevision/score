@@ -6,7 +6,7 @@ use serde_derive::Deserialize;
 
 use crate::consts::ALLOWED_CLASSES;
 
-pub type Result<T> = std::result::Result<T, Box<std::error::Error>>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 type SignIndex = HashMap<String, IndexItem>;
 type Reader = csv::Reader<BufReader<File>>;
 
@@ -90,6 +90,7 @@ fn convert_sign(mut s: RoadSign) -> Option<RoadSign> {
     if s.class.starts_with("4.1") { s.class = "4.1".to_string(); }
     if s.class.starts_with("4.2") { s.class = "4.2".to_string(); }
     if s.class.starts_with("5.19") { s.class = "5.19".to_string(); }
+    if s.class.starts_with("8.22") { s.class = "8.22".to_string(); }
     if ALLOWED_CLASSES.contains(&s.class.as_str()) {
         Some(s)
     } else {
