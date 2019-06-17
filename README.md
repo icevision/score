@@ -65,7 +65,7 @@ $ git clone https://github.com/icevision/score
 $ cd ripgrep
 $ cargo build --release
 $ ./target/release/icevision-score --help
-icevision-score 0.1.0
+icevision-score 0.1.4
 Artyom Pavlov <newpavlov@gmail.com>
 IceVision competition scoring software
 
@@ -88,14 +88,14 @@ ARGS:
 For ground truth we use some files from [annotations] repository.
 ```
 $ ./icevision-score examples/ground_truth/ examples/good.tsv
-Total score:    1.783
+Total score:    1.838
 Total penalty:  0.000
 Score 2.1:  0.000
-Score 2.4:  0.783
+Score 2.4:  0.856
 Score 3.1:  0.000
 Score 3.24: 0.000
 Score 3.27: 0.000
-Score 4.1:  1.000
+Score 4.1:  0.983
 Score 4.2:  0.000
 Score 5.19: 0.000
 Score 5.20: 0.000
