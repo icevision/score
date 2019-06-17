@@ -15,5 +15,5 @@ pub static ALLOWED_CLASSES: [&'static str; CLASSES_N] = [
 ];
 /// False positive detection penalty
 pub const FP_PENALTY: f32 = 2.0;
-pub const IOU_TOP: f32 = 0.75;
+pub const IOU_TOP: f32 = 0.85;
 pub const IOU_BOT: f32 = 0.5;
