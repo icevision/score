@@ -12,12 +12,24 @@ use read::Result;
 fn main() -> Result<()> {
     let opt = cli::Cli::from_args();
 
-    let index = read::read_files(&opt.ground_truth, &opt.solution)?;
+    let mut index = read::read_files(&opt.ground_truth, &opt.solution)?;
 
     let mut stats = ScoreStats::default();
-    let iter = index.into_iter().map(|v| v.1).filter(|v| v.solutions.len() != 0);
-    for item in iter {
-        stats.update(compute_score(item));
+    let mut keys: Vec<String> = index.iter()
+        .filter(|v| v.1.solutions.len() != 0)
+        .map(|v| v.0.clone())
+        .collect();
+    keys.sort_unstable();
+    for key in keys {
+        let val = index.remove(&key).expect("key is valid");
+        if opt.verbose {
+            println!("\nframe: {}", key);
+        }
+        stats.update(compute_score(val, opt.verbose));
+    }
+
+    if opt.verbose {
+        println!("\n===========================\n");
     }
 
     println!("Total score:\t{:.3}", stats.score);

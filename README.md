@@ -65,16 +65,17 @@ $ git clone https://github.com/icevision/score
 $ cd score/
 $ cargo build --release
 $ ./target/release/icevision-score --help
-icevision-score 0.1.4
+icevision-score 0.1.5
 Artyom Pavlov <newpavlov@gmail.com>
 IceVision competition scoring software
 
 USAGE:
-    icevision-score <ground_truth> <solution>
+    icevision-score [FLAGS] <ground_truth> <solution>
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
+    -v, --verbose    Enable verbose report
 
 ARGS:
     <ground_truth>    Path to a directory with ground truth TSV files.
@@ -90,16 +91,51 @@ For ground truth we use some files from [annotations] repository.
 $ ./target/release/icevision-score examples/ground_truth/ examples/good.tsv
 Total score:    1.838
 Total penalty:  0.000
-Score 2.1:  0.000
-Score 2.4:  0.856
-Score 3.1:  0.000
-Score 3.24: 0.000
-Score 3.27: 0.000
-Score 4.1:  0.983
-Score 4.2:  0.000
-Score 5.19: 0.000
-Score 5.20: 0.000
-Score 8.22: 0.000
+Score 2.1:      0.000
+Score 2.4:      0.856
+Score 3.1:      0.000
+Score 3.24:     0.000
+Score 3.27:     0.000
+Score 4.1:      0.983
+Score 4.2:      0.000
+Score 5.19:     0.000
+Score 5.20:     0.000
+Score 8.22:     0.000
+Penalty 2.1:    0.000
+Penalty 2.4:    0.000
+Penalty 3.1:    0.000
+Penalty 3.24:   0.000
+Penalty 3.27:   0.000
+Penalty 4.1:    0.000
+Penalty 4.2:    0.000
+Penalty 5.19:   0.000
+Penalty 5.20:   0.000
+Penalty 8.22:   0.000
+```
+
+To enable verbose report use `--verbose` flag:
+```
+./target/release/icevision-score --verbose examples/ground_truth/ examples/good.tsv
+
+frame: 2018-02-13_1418_left/000033
+score   xtl     ytl     xbr     ybr     class
+0.983   1774    896     1847    979     4.1
+0.856   1643    895     1771    973     2.4
+
+===========================
+
+Total score:    1.838
+Total penalty:  0.000
+Score 2.1:      0.000
+Score 2.4:      0.856
+Score 3.1:      0.000
+Score 3.24:     0.000
+Score 3.27:     0.000
+Score 4.1:      0.983
+Score 4.2:      0.000
+Score 5.19:     0.000
+Score 5.20:     0.000
+Score 8.22:     0.000
 Penalty 2.1:    0.000
 Penalty 2.4:    0.000
 Penalty 3.1:    0.000

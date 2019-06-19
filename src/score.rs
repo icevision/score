@@ -1,5 +1,3 @@
-use log::debug;
-
 use crate::consts::{CLASSES_N, ALLOWED_CLASSES, FP_PENALTY, IOU_BOT, IOU_TOP};
 use crate::read::{RoadSign, IndexItem};
 
@@ -61,11 +59,11 @@ fn find_class_idx(class: &str) -> Option<usize> {
 }
 
 /// Compute score stats for given frame.
-pub fn compute_score(item: IndexItem) -> ScoreStats {
+pub fn compute_score(item: IndexItem, verbose: bool) -> ScoreStats {
     let IndexItem { gtruth, solutions } = item;
 
     #[derive(Debug, Clone, Copy)]
-    struct Hit { gt_idx: usize, sol_idx: usize, iou: f32 }
+    struct Hit { gt_idx: usize, sol_idx: usize, iou: f32, score: f32 }
 
     let mut hits = vec![];
 
@@ -74,7 +72,8 @@ pub fn compute_score(item: IndexItem) -> ScoreStats {
             if gt_item.class != sol_item.class { continue; }
             let iou = compute_iou(gt_item, sol_item);
             if iou < IOU_BOT { continue; }
-            hits.push(Hit { gt_idx, sol_idx, iou } )
+            let score = iou2score(iou);
+            hits.push(Hit { gt_idx, sol_idx, iou, score } )
         }
     }
 
@@ -93,16 +92,25 @@ pub fn compute_score(item: IndexItem) -> ScoreStats {
         hits.retain(|h| h.gt_idx != max.gt_idx && h.sol_idx != max.sol_idx);
     }
 
-    debug!("selected hits: {:?}", selected_hits);
+    if verbose {
+        println!("score\txtl\tytl\txbr\tybr\tclass");
+        for (i, s) in solutions.iter().enumerate() {
+            let score = selected_hits.iter()
+                .find(|v| v.sol_idx == i)
+                .map(|v| v.score)
+                .unwrap_or(-FP_PENALTY);
+            println!("{:.3}\t{:<10}\t{}\t{}\t{}\t{}",
+                score, s.xtl, s.ytl, s.xbr, s.ybr, s.class);
+        }
+    }
 
     let mut stats = ScoreStats::default();
     for hit in selected_hits.iter() {
-        let score = iou2score(hit.iou);
-        stats.score += score;
+        stats.score += hit.score;
 
         let class_idx = find_class_idx(&solutions[hit.sol_idx].class)
             .expect("classes should've been filtered");
-        stats.class_scores[class_idx] += score;
+        stats.class_scores[class_idx] += hit.score;
     }
 
     // find all non-selected solutions
@@ -111,8 +119,6 @@ pub fn compute_score(item: IndexItem) -> ScoreStats {
         .filter(|(i, _)| selected_hits.iter().all(|h| h.sol_idx != *i))
         .map(|(_, v)| v)
         .collect();
-
-    debug!("leftovers: {:?}", leftovers);
 
     for val in leftovers {
         stats.score -= FP_PENALTY;

@@ -108,8 +108,12 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
             .and_then(|v| v.to_str())
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
                 "failed to derive set name from directory name"))?;
+        if !path.is_dir() { continue }
         for entry in fs::read_dir(&path)? {
             let path = &entry?.path();
+            if path.extension().map(|v| v != "tsv").unwrap_or(true) {
+                continue;
+            }
             let mut gt_rdr = gt_reader(path)?;
             let frame = path.file_stem()
                 .and_then(|v| v.to_str())
