@@ -62,7 +62,7 @@ stable release of the Rust compiler, but older versions may work as well.
 
 ```
 $ git clone https://github.com/icevision/score
-$ cd ripgrep
+$ cd score/
 $ cargo build --release
 $ ./target/release/icevision-score --help
 icevision-score 0.1.4
@@ -87,7 +87,7 @@ ARGS:
 ## Usage example
 For ground truth we use some files from [annotations] repository.
 ```
-$ ./icevision-score examples/ground_truth/ examples/good.tsv
+$ ./target/release/icevision-score examples/ground_truth/ examples/good.tsv
 Total score:    1.838
 Total penalty:  0.000
 Score 2.1:  0.000
