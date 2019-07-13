@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     let mut per_class: Vec<_> = stats.per_class.iter().collect();
 
     // we know that we can't have NaNs here
-    per_class.sort_unstable_by_key(|v| ((v.1).0*1000.) as i64);
+    per_class.sort_unstable_by_key(|v| -((v.1).0*1000.) as i64);
 
     println!("Per class results:");
     println!("Class\tScore\tPenalty");
