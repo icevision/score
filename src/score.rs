@@ -1,5 +1,5 @@
 use crate::consts::{FP_PENALTY, IOU_BOT, IOU_TOP};
-use crate::read::{SignDetection, Bbox, SignClass, IndexItem};
+use crate::read::{SignAnnotation, SignDetection, Bbox, SignClass, IndexItem};
 use std::collections::HashMap;
 
 /// Solution score and statistics.
@@ -34,7 +34,6 @@ fn iou2score(iou: f32) -> f32 {
     } else if iou >= IOU_BOT {
         ((iou - IOU_BOT)/(IOU_TOP - IOU_BOT)).sqrt().sqrt()
     } else {
-        println!("{:?}", iou);
         panic!("expected IoU to be bigger than IOU_BOT");
     }
 }
@@ -65,6 +64,30 @@ fn compute_k1(gt: SignClass, det: SignClass) -> Option<i32> {
     }
 }
 
+fn compute_k2(gt: &SignAnnotation, det: &SignDetection) -> i32 {
+    fn normalize(s: &str) -> String {
+        s.chars().filter(|&c| c != ' ').collect::<String>().to_lowercase()
+    }
+
+    match (&gt.data, &det.data) {
+        (Some(s1), Some(s2)) => if normalize(s1) == normalize(s2) {
+            200
+        } else {
+            -50
+        },
+        (None, Some(_)) => -50,
+        (Some(_), None) | (None, None) => 0,
+    }
+}
+
+fn compute_k3(gt: &SignAnnotation, det: &SignDetection) -> i32 {
+    match (gt.temporary, det.temporary) {
+        (true, Some(true)) =>  100,
+        (false, Some(true)) | (true, Some(false)) => -50,
+        _ => 0,
+    }
+}
+
 /// Compute score stats for given frame.
 pub fn update_score(stats: &mut ScoreStats, item: IndexItem, verbose: bool) {
     let IndexItem { gtruth, solutions } = item;
@@ -91,8 +114,8 @@ pub fn update_score(stats: &mut ScoreStats, item: IndexItem, verbose: bool) {
             } else {
                 0.0
             };
-            let k2 = 0;
-            let k3 = 0;
+            let k2 = compute_k2(gt_item, sol_item);
+            let k3 = compute_k3(gt_item, sol_item);;
             let score = if k1 + k2 + k3 > -100 {
                 let k = ((100 + k1 + k2 + k3) as f32)/100.;
                 k*s
@@ -119,15 +142,20 @@ pub fn update_score(stats: &mut ScoreStats, item: IndexItem, verbose: bool) {
     }
 
     if verbose {
-        println!("score\txtl\tytl\txbr\tybr\tclass");
+        println!("score\txtl\tytl\txbr\tybr\tclass\ts\tk1\tk2\tk3");
         for (i, s) in solutions.iter().enumerate() {
-            let score = selected_hits.iter()
-                .find(|v| v.sol_idx == i)
-                .map(|v| v.score)
-                .unwrap_or(-FP_PENALTY);
             let b = s.bbox;
-            println!("{:.3}\t{:<10}\t{}\t{}\t{}\t{}",
-                score, b.xtl, b.ytl, b.xbr, b.ybr, s.class);
+            match selected_hits.iter().find(|v| v.sol_idx == i) {
+                Some(v) => println!(
+                    "{:.3}\t{}\t{}\t{}\t{}\t{}\t{:.3}\t{}\t{}\t{}",
+                    v.score, b.xtl, b.ytl, b.xbr, b.ybr, s.class,
+                    v.s, v.k1, v.k2, v.k3,
+                ),
+                None => println!(
+                    "{:.3}\t{}\t{}\t{}\t{}\t{:.3}\t-\t-\t-\t-",
+                    FP_PENALTY, b.xtl, b.ytl, b.xbr, b.ybr, s.class,
+                ),
+            }
         }
     }
 
