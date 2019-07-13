@@ -1,29 +1,17 @@
-use crate::consts::{CLASSES_N, ALLOWED_CLASSES, FP_PENALTY, IOU_BOT, IOU_TOP};
-use crate::read::{RoadSign, IndexItem};
+use crate::consts::{FP_PENALTY, IOU_BOT, IOU_TOP};
+use crate::read::{SignDetection, Bbox, SignClass, IndexItem};
+use std::collections::HashMap;
 
 /// Solution score and statistics.
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ScoreStats {
     pub score: f32,
     pub penalty: f32,
-    pub class_scores: [f32; CLASSES_N],
-    pub class_penalties: [f32; CLASSES_N],
+    // first float is score, second penalty
+    pub per_class: HashMap<SignClass, (f32, f32)>,
 }
-
-impl ScoreStats {
-    /// Update score stats.
-    pub fn update(&mut self, new_stats: ScoreStats) {
-        self.score += new_stats.score;
-        self.penalty += new_stats.penalty;
-        for i in 0..CLASSES_N {
-            self.class_scores[i] += new_stats.class_scores[i];
-            self.class_penalties[i] += new_stats.class_penalties[i];
-        }
-    }
-}
-
 /// Compute Intersection Over Union for two bounding boxes.
-fn compute_iou(s1: &RoadSign, s2: &RoadSign) -> f32 {
+fn compute_iou(s1: Bbox, s2: Bbox) -> f32 {
     let a1 = (s1.xbr - s1.xtl)*(s1.ybr - s1.ytl);
     let a2 = (s2.xbr - s2.xtl)*(s2.ybr - s2.ytl);
 
@@ -51,29 +39,67 @@ fn iou2score(iou: f32) -> f32 {
     }
 }
 
-/// Find index of the given sign class.
-fn find_class_idx(class: &str) -> Option<usize> {
-    ALLOWED_CLASSES.iter().enumerate().find_map(|(i, &val)| {
-        if val == class { Some(i) } else { None }
-    })
+/// Compute k1 in percents
+fn compute_k1(gt: SignClass, det: SignClass) -> Option<i32> {
+    use SignClass::*;
+    match (gt, det) {
+        (Double(_, _), Double(_, _))
+            | (Triple(_, _, _), Triple(_, _, _))
+            if gt == det
+            => Some(0),
+        (Triple(g1, g2, _), Double(d1, d2))
+            if g1 == d1 && g2 == d2
+            => Some(-20),
+        (Double(g1, _), Single(d1))
+            | (Triple(g1, _, _), Single(d1))
+            if g1 == d1
+            => Some(-70),
+        (Single(8), Single(8))
+            | (Single(8), Double(8, _))
+            | (Single(8), Triple(8, _, _))
+            => Some(0),
+        (Single(_), _) => panic!("unexpected annotation class: {:?}", gt),
+        (Na, _) => Some(0),
+        (_, Na) => None, // detections should not use NA class
+        _ => None,
+    }
 }
 
 /// Compute score stats for given frame.
-pub fn compute_score(item: IndexItem, verbose: bool) -> ScoreStats {
+pub fn update_score(stats: &mut ScoreStats, item: IndexItem, verbose: bool) {
     let IndexItem { gtruth, solutions } = item;
 
     #[derive(Debug, Clone, Copy)]
-    struct Hit { gt_idx: usize, sol_idx: usize, iou: f32, score: f32 }
+    struct Hit {
+        gt_idx: usize, sol_idx: usize,
+        iou: f32, score: f32,
+        s: f32, k1: i32, k2: i32, k3: i32,
+    }
 
     let mut hits = vec![];
 
     for (gt_idx, gt_item) in gtruth.iter().enumerate() {
         for (sol_idx, sol_item) in solutions.iter().enumerate() {
-            if gt_item.class != sol_item.class { continue; }
-            let iou = compute_iou(gt_item, sol_item);
+            let k1 = match compute_k1(gt_item.class, sol_item.class) {
+                Some(k) => k,
+                None => continue,
+            };
+            let iou = compute_iou(gt_item.bbox, sol_item.bbox);
             if iou < IOU_BOT { continue; }
-            let score = iou2score(iou);
-            hits.push(Hit { gt_idx, sol_idx, iou, score } )
+            let s = if gt_item.class != SignClass::Na {
+                iou2score(iou)
+            } else {
+                0.0
+            };
+            let k2 = 0;
+            let k3 = 0;
+            let score = if k1 + k2 + k3 > -100 {
+                let k = ((100 + k1 + k2 + k3) as f32)/100.;
+                k*s
+            } else {
+                0.0
+            };
+            hits.push(Hit { gt_idx, sol_idx, iou, score, s, k1, k2, k3 } )
         }
     }
 
@@ -99,22 +125,21 @@ pub fn compute_score(item: IndexItem, verbose: bool) -> ScoreStats {
                 .find(|v| v.sol_idx == i)
                 .map(|v| v.score)
                 .unwrap_or(-FP_PENALTY);
+            let b = s.bbox;
             println!("{:.3}\t{:<10}\t{}\t{}\t{}\t{}",
-                score, s.xtl, s.ytl, s.xbr, s.ybr, s.class);
+                score, b.xtl, b.ytl, b.xbr, b.ybr, s.class);
         }
     }
 
-    let mut stats = ScoreStats::default();
     for hit in selected_hits.iter() {
         stats.score += hit.score;
-
-        let class_idx = find_class_idx(&solutions[hit.sol_idx].class)
-            .expect("classes should've been filtered");
-        stats.class_scores[class_idx] += hit.score;
+        let class = solutions[hit.sol_idx].class.truncate();
+        let entry = stats.per_class.entry(class).or_insert((0.0, 0.0));
+        entry.0 += hit.score;
     }
 
     // find all non-selected solutions
-    let leftovers: Vec<RoadSign> = solutions.into_iter()
+    let leftovers: Vec<SignDetection> = solutions.into_iter()
         .enumerate()
         .filter(|(i, _)| selected_hits.iter().all(|h| h.sol_idx != *i))
         .map(|(_, v)| v)
@@ -124,11 +149,9 @@ pub fn compute_score(item: IndexItem, verbose: bool) -> ScoreStats {
         stats.score -= FP_PENALTY;
         stats.penalty += FP_PENALTY;
 
-        let class_idx = find_class_idx(&val.class)
-            .expect("classes should've been filtered");
-        stats.class_scores[class_idx] -= FP_PENALTY;
-        stats.class_penalties[class_idx] += FP_PENALTY;
+        let class = val.class.truncate();
+        let entry = stats.per_class.entry(class).or_insert((0.0, 0.0));
+        entry.0 -= FP_PENALTY;
+        entry.1 += FP_PENALTY;
     }
-
-    stats
 }

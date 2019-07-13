@@ -5,8 +5,7 @@ mod consts;
 mod read;
 mod score;
 
-use consts::ALLOWED_CLASSES;
-use score::{ScoreStats, compute_score};
+use score::{ScoreStats, update_score};
 use read::Result;
 
 fn main() -> Result<()> {
@@ -25,7 +24,7 @@ fn main() -> Result<()> {
         if opt.verbose {
             println!("\nframe: {}", key);
         }
-        stats.update(compute_score(val, opt.verbose));
+        update_score(&mut stats, val, opt.verbose);
     }
 
     if opt.verbose {
@@ -34,11 +33,17 @@ fn main() -> Result<()> {
 
     println!("Total score:\t{:.3}", stats.score);
     println!("Total penalty:\t{:.3}", stats.penalty);
-    for (s, class) in stats.class_scores.iter().zip(&ALLOWED_CLASSES) {
-        println!("Score {}:\t{:.3}", class, s);
+
+    let mut per_class: Vec<_> = stats.per_class.iter().collect();
+
+    // we know that we can't have NaNs here
+    per_class.sort_unstable_by_key(|v| ((v.1).0*1000.) as i64);
+
+    println!("Per class results:");
+    println!("Class\tScore\tPenalty");
+    for (class, (score, penalty)) in per_class {
+        println!("{}\t{:.3}\t{:.3}", class, score, penalty);
     }
-    for (p, class) in stats.class_penalties.iter().zip(&ALLOWED_CLASSES) {
-        println!("Penalty {}:\t{:.3}", class, p);
-    }
+
     Ok(())
 }

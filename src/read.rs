@@ -4,73 +4,136 @@ use std::path::Path;
 use std::collections::HashMap;
 use serde_derive::Deserialize;
 
-use crate::consts::ALLOWED_CLASSES;
-
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 type SignIndex = HashMap<String, IndexItem>;
 type Reader = csv::Reader<BufReader<File>>;
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct RoadSign {
+mod sign_class {
+    use serde::{self, de, Deserialize, Deserializer};
+    use std::fmt;
+
+    #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum SignClass {
+        Single(u8),
+        Double(u8, u8),
+        Triple(u8, u8, u8),
+        Na,
+    }
+
+    impl SignClass {
+        /// Truncate third integer if present
+        pub fn truncate(self) -> Self {
+            match self {
+                SignClass::Triple(a, b, _) => SignClass::Double(a, b),
+                v => v,
+            }
+        }
+    }
+
+    impl fmt::Display for SignClass {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            use SignClass::*;
+            match self {
+                Single(a) => write!(f, "{}", a),
+                Double(a, b) => write!(f, "{}.{}", a, b),
+                Triple(a, b, c) => write!(f, "{}.{}.{}", a, b, c),
+                Na => write!(f, "NA"),
+            }
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D)
+        -> Result<SignClass, D::Error>
+        where D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        if s == "NA" {
+            return Ok(SignClass::Na)
+        }
+        let res: Vec<u8> = s
+            .split('.')
+            .map(std::str::FromStr::from_str)
+            .collect::<Result<_, _>>()
+            .map_err(|_| de::Error::custom("invalid sign class"))?;
+        match res.as_slice() {
+            [a] => Ok(SignClass::Single(*a)),
+            [a, b] => Ok(SignClass::Double(*a, *b)),
+            [a, b, c] => Ok(SignClass::Triple(*a, *b, *c)),
+            _ => Err(de::Error::custom("invalid sign class")),
+        }
+    }
+}
+
+pub use sign_class::SignClass;
+
+#[derive(Debug, Deserialize, Clone, Copy)]
+pub struct Bbox {
     pub xtl: f32,
     pub ytl: f32,
     pub xbr: f32,
     pub ybr: f32,
-    pub class: String,
+}
+
+impl Bbox {
+    fn check(&self) -> Result<()> {
+        if !self.xtl.is_finite() {
+            Err(format!("xtl is not finite: {}", self.xtl))?;
+        }
+        if !self.xbr.is_finite() {
+            Err(format!("xbr is not finite: {}", self.xbr))?;
+        }
+        if self.xtl > self.xbr {
+            Err(format!("xtl is bigger than xbr: {} {}", self.xtl, self.xbr))?;
+        }
+        if !self.ytl.is_finite() {
+            Err(format!("ytl is not finite: {}", self.ytl))?;
+        }
+        if !self.ybr.is_finite() {
+            Err(format!("ybr is not finite: {}", self.ybr))?;
+        }
+        if self.ytl > self.ybr {
+            Err(format!("ytl is bigger than ybr: {} {}", self.ytl, self.ybr))?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SignAnnotation {
+    #[serde(flatten)]
+    pub bbox: Bbox,
+    #[serde(with = "sign_class")]
+    pub class: SignClass,
+    pub temporary: bool,
+    pub occluded: bool,
+    pub data: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SignDetection {
+    #[serde(flatten)]
+    pub bbox: Bbox,
+    #[serde(with = "sign_class")]
+    pub class: SignClass,
+    pub temporary: Option<bool>,
+    pub data: Option<String>,
 }
 
 #[derive(Clone, Default, Debug)]
 pub struct IndexItem {
-    pub gtruth: Vec<RoadSign>,
-    pub solutions: Vec<RoadSign>,
+    pub gtruth: Vec<SignAnnotation>,
+    pub solutions: Vec<SignDetection>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 struct SolutionRecord {
-    frame: String,
-    xtl: f32,
-    ytl: f32,
-    xbr: f32,
-    ybr: f32,
-    class: String,
-}
-
-impl SolutionRecord {
-    fn split(self) -> (String, RoadSign) {
-        (self.frame, RoadSign {
-            xtl: self.xtl,
-            ytl: self.ytl,
-            xbr: self.xbr,
-            ybr: self.ybr,
-            class: self.class,
-        })
-    }
-}
-
-/// Checks bounding box coordinates and sign class.
-fn check_sign(sign: &RoadSign) -> Result<()> {
-    if !sign.xtl.is_finite() {
-        Err(format!("xtl is not finite: {}", sign.xtl))?;
-    }
-    if !sign.xbr.is_finite() {
-        Err(format!("xbr is not finite: {}", sign.xbr))?;
-    }
-    if sign.xtl > sign.xbr {
-        Err(format!("xtl is bigger than xbr: {} {}", sign.xtl, sign.xbr))?;
-    }
-    if !sign.ytl.is_finite() {
-        Err(format!("ytl is not finite: {}", sign.ytl))?;
-    }
-    if !sign.ybr.is_finite() {
-        Err(format!("ybr is not finite: {}", sign.ybr))?;
-    }
-    if sign.ytl > sign.ybr {
-        Err(format!("ytl is bigger than ybr: {} {}", sign.ytl, sign.ybr))?;
-    }
-    if !ALLOWED_CLASSES.contains(&sign.class.as_str()) {
-        Err(format!("invalid sign class: {}", sign.class))?;
-    }
-    Ok(())
+    pub frame: String,
+    #[serde(flatten)]
+    pub bbox: Bbox,
+    #[serde(with = "sign_class")]
+    pub class: SignClass,
+    pub temporary: Option<bool>,
+    pub data: Option<String>,
 }
 
 /// Ground truth TSV reader.
@@ -81,21 +144,6 @@ fn gt_reader(path: &Path) -> Result<Reader> {
         .delimiter(b'\t')
         .from_reader(reader);
     Ok(rdr)
-}
-
-/// Convert road sign to one used for online stage.
-///
-/// Returns `None` if sign is not used in online stage.
-fn convert_sign(mut s: RoadSign) -> Option<RoadSign> {
-    if s.class.starts_with("4.1") { s.class = "4.1".to_string(); }
-    if s.class.starts_with("4.2") { s.class = "4.2".to_string(); }
-    if s.class.starts_with("5.19") { s.class = "5.19".to_string(); }
-    if s.class.starts_with("8.22") { s.class = "8.22".to_string(); }
-    if ALLOWED_CLASSES.contains(&s.class.as_str()) {
-        Some(s)
-    } else {
-        None
-    }
 }
 
 /// Read ground truth and solution files.
@@ -124,12 +172,9 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
             let entry = &mut index.entry(frame)
                     .or_insert_with(Default::default)
                     .gtruth;
-            for record in gt_rdr.deserialize() {
-                let sign = match convert_sign(record?) {
-                    Some(s) => s,
-                    None => continue,
-                };
-                check_sign(&sign)?;
+            for sign in gt_rdr.deserialize() {
+                let sign: SignAnnotation = sign?;
+                sign.bbox.check()?;
                 entry.push(sign);
             }
         }
@@ -141,11 +186,12 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
         .delimiter(b'\t')
         .from_reader(reader);
     for record in sol_rdr.deserialize() {
-        let record: SolutionRecord = record?;
-        let (frame, sign) = record.split();
-        check_sign(&sign)?;
-        // ignore signs with area smaller than 100 pixels
-        if (sign.xbr - sign.xtl)*(sign.xbr - sign.xtl) < 100. {
+        let SolutionRecord { frame, bbox, class, temporary, data } = record?;
+        let sign = SignDetection { bbox, class, temporary, data };
+        sign.bbox.check()?;
+        let bbox = sign.bbox;
+        // ignore signs with an area smaller than 100 pixels
+        if (bbox.xbr - bbox.xtl)*(bbox.xbr - bbox.xtl) < 100. {
             continue;
         }
         if let Some(item) = index.get_mut(&frame) {
