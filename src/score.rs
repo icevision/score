@@ -57,6 +57,7 @@ fn compute_k1(gt: SignClass, det: SignClass) -> Option<i32> {
             | (Single(8), Double(8, _))
             | (Single(8), Triple(8, _, _))
             => Some(0),
+        (Single(8), _) => None,
         (Single(_), _) => panic!("unexpected annotation class: {:?}", gt),
         (Na, _) => Some(0),
         (_, Na) => None, // detections should not use NA class
