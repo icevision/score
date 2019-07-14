@@ -154,7 +154,7 @@ pub fn update_score(stats: &mut ScoreStats, item: IndexItem, verbose: bool) {
                 ),
                 None => println!(
                     "{:.3}\t{}\t{}\t{}\t{}\t{:.3}\t-\t-\t-\t-",
-                    FP_PENALTY, b.xtl, b.ytl, b.xbr, b.ybr, s.class,
+                    -FP_PENALTY, b.xtl, b.ytl, b.xbr, b.ybr, s.class,
                 ),
             }
         }
