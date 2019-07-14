@@ -2,6 +2,8 @@
 
 Scoring software used in the IceVision competition.
 
+The version used during online stage had version [`v0.1.5`](https://github.com/icevision/score/tree/v0.1.5).
+
 ## Input file formats
 
 For ground truth we use exactly the same format as in the [annotations]
@@ -11,6 +13,8 @@ For solutions we use a slightly different TSV (tab-separated values) file format
 - `frame`: sequence + frame number, e.g. `2018-02-13_1418_left/000032`.
 - `xtl`, `ytl`, `xbr`, `ybr`: bounding box coordinates, integer or float. Note: `xtl` must be bigger than `xbr` and `ytl` must be bigger than `ybr`
 - `class`: traffic sign code. Valid values are: `2.1`, `2.4`, `3.1`, `3.24`, `3.27`, `4.1`, `4.2`, `5.19`, `5.20`, `8.22`.
+- `temporary`: is sign temporary (has a yellow background)? Valid values: `true` and `false`. Can be omitted.
+- `data`: associated sign data. UTF-8 encoded string. Can be omitted.
 
 Some examples can be found in [`examples/`] folder.
 
@@ -18,36 +22,45 @@ Some examples can be found in [`examples/`] folder.
 
 ## Scoring methodology
 
-During online stage participants have to detect the following traffic signs:
-
-<details>
-  <summary>Click to expand table</summary>
-
-| Code | Image   | Description |
-| -----|:-------:| :----------:|
-| 2.1  | ![2.1]  | Main road |
-| 2.4  | ![2.4]  | Yield road |
-| 3.1  | ![3.1]  | No entry |
-| 3.24 | ![3.24] | Maximum speed limit |
-| 3.27 | ![3.27] | No stopping |
-| 4.1 | ![4.1.1] ![4.1.2] ![4.1.3] <br/>![4.1.4] ![4.1.5] ![4.1.6] | Proceed in the given direction |
-| 4.2 | ![4.2.1] ![4.2.2] ![4.2.3] | Pass on the given side |
-| 5.19 | ![5.19.1] ![5.19.2] | Pedestrian crossing |
-| 5.20 | ![5.20] | Road bump |
-| 8.22 | ![8.22.1] ![8.22.2] ![8.22.3] | Obstacle |
-
-Traffic sign images: © Wikimedia Commons Contributors / CC-BY-SA-3.0
-</details>
+During offline stage participants can detect all traffic sign classes defined by Russian traffic code.
 
 Bounding boxes with an area smaller than 100 pixels are ignored during
 evaluation. Detection is considered successful if [IoU] is bigger or equal to
-0.5 and bounding box has a correct class code. If sign is detected twice, then
-detection with a smallest IoU will be counted as a false positive. Each false
-positive or incorrect detection results in penalty equal to 2 points.
+0.3 and bounding box has a correct class or superclass code. If sign is
+detected twice, then detection with a smallest IoU will be counted as a false
+positive. Each false positive or incorrect detection results in a penalty
+equal to 2 points.
 
-If IoU of a true positive detection is bigger than 0.85, it results in adding
-1 point to final result. Otherwise points are calculated as
-`((IoU - 0.5)/0.35)^0.25`.
+Score for true positives is calculated as `(1 + k1 + k2 + k3)*s`, where:
+s -- "base" score, k1 -- coefficient for detecting sign code,
+k2 -- coefficient for detecting associated data, k3 -- coefficient for
+detecting temporary sign. If `(1 + k1 + k2 + k3) < 0`, detection score
+is set to 0.
+
+If IoU > 0.85, `s = 1`. Otherwise it is calculated using the following
+equation: `((IoU – 0.3)/0.55)^0.25`.
+
+`k1` is calculated as follows. For two-digit signs (e.g. “1.25”):
+- If only one digit is detected (e.g. “1”), `k1=-0.7`
+- If two digits are detected (e.g. “1.25”), `k1=0`
+
+For three-digit signs (e.g. “5.19.1”):
+- If only one digit is detected (e.g. “5”), `k1=-0.7`
+- If two digits are detected (e.g. “5.19”), `k1=-0.2`
+- If three digits are detected (e.g. “5.19.1”), `k1=0`
+
+If manual annotation have used “8” for sign code, then for all traffic sign detections beginning with “8”, K1=0
+
+If detection provides sign associated data and it is equal to annotation
+associated data, `k2=2`. If data is different, `k2=-0.5`. If annotation has
+used “NA” for associated data, `k2=0` for any data provided in detection.
+
+If detection does not provide any information about sign being temporary
+(empty string in the "temporary" field), `k3=0`. If sign is annotated as
+temporary and detection is correct ("true" in the "temporary" field), `k3=1`.
+If sign is not annotated as temporary and detection is correct ("false" in the
+"temporary" field), `k3=0`. If detection is incorrect about sign being
+temporary, `k3=-0.5`.
 
 The final score is computed as sum of all true positive points minus all penalties.
 
@@ -65,7 +78,7 @@ $ git clone https://github.com/icevision/score
 $ cd score/
 $ cargo build --release
 $ ./target/release/icevision-score --help
-icevision-score 0.1.5
+icevision-score 0.2.2
 Artyom Pavlov <newpavlov@gmail.com>
 IceVision competition scoring software
 
@@ -89,63 +102,33 @@ ARGS:
 For ground truth we use some files from [annotations] repository.
 ```
 $ ./target/release/icevision-score examples/ground_truth/ examples/good.tsv
-Total score:    1.838
+Total score:    1.249
 Total penalty:  0.000
-Score 2.1:      0.000
-Score 2.4:      0.856
-Score 3.1:      0.000
-Score 3.24:     0.000
-Score 3.27:     0.000
-Score 4.1:      0.983
-Score 4.2:      0.000
-Score 5.19:     0.000
-Score 5.20:     0.000
-Score 8.22:     0.000
-Penalty 2.1:    0.000
-Penalty 2.4:    0.000
-Penalty 3.1:    0.000
-Penalty 3.24:   0.000
-Penalty 3.27:   0.000
-Penalty 4.1:    0.000
-Penalty 4.2:    0.000
-Penalty 5.19:   0.000
-Penalty 5.20:   0.000
-Penalty 8.22:   0.000
+Per class results:
+Class   Score   Penalty
+4.1     0.791   0.000
+2.4     0.458   0.000
+
 ```
 
 To enable verbose report use `--verbose` flag:
 ```
-./target/release/icevision-score --verbose examples/ground_truth/ examples/good.tsv
+$ ./target/release/icevision-score --verbose examples/ground_truth/ examples/good.tsv
 
 frame: 2018-02-13_1418_left/000033
-score   xtl     ytl     xbr     ybr     class
-0.983   1774    896     1847    979     4.1
-0.856   1643    895     1771    973     2.4
+score   xtl     ytl     xbr     ybr     class   s       k1  k2  k3
+0.791   1774    896     1847    979     4.1     0.989   -20 0   0
+0.458   1643    895     1771    973     2.4     0.916   0   0   -50
 
 ===========================
 
-Total score:    1.838
+Total score:    1.249
 Total penalty:  0.000
-Score 2.1:      0.000
-Score 2.4:      0.856
-Score 3.1:      0.000
-Score 3.24:     0.000
-Score 3.27:     0.000
-Score 4.1:      0.983
-Score 4.2:      0.000
-Score 5.19:     0.000
-Score 5.20:     0.000
-Score 8.22:     0.000
-Penalty 2.1:    0.000
-Penalty 2.4:    0.000
-Penalty 3.1:    0.000
-Penalty 3.24:   0.000
-Penalty 3.27:   0.000
-Penalty 4.1:    0.000
-Penalty 4.2:    0.000
-Penalty 5.19:   0.000
-Penalty 5.20:   0.000
-Penalty 8.22:   0.000
+Per class results:
+Class   Score   Penalty
+4.1     0.791   0.000
+2.4     0.458   0.000
+
 ```
 
 [annotations]: https://github.com/icevision/annotations/
