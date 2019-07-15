@@ -75,7 +75,9 @@ pub struct Bbox {
 }
 
 impl Bbox {
-    fn check(&self) -> Result<()> {
+    fn check(&mut self) -> Result<()> {
+        use std::mem::swap;
+
         if !self.xtl.is_finite() {
             Err(format!("xtl is not finite: {}", self.xtl))?;
         }
@@ -83,7 +85,7 @@ impl Bbox {
             Err(format!("xbr is not finite: {}", self.xbr))?;
         }
         if self.xtl > self.xbr {
-            Err(format!("xtl is bigger than xbr: {} {}", self.xtl, self.xbr))?;
+            swap(&mut self.xtl, &mut self.xbr);
         }
         if !self.ytl.is_finite() {
             Err(format!("ytl is not finite: {}", self.ytl))?;
@@ -92,7 +94,7 @@ impl Bbox {
             Err(format!("ybr is not finite: {}", self.ybr))?;
         }
         if self.ytl > self.ybr {
-            Err(format!("ytl is bigger than ybr: {} {}", self.ytl, self.ybr))?;
+            swap(&mut self.ytl, &mut self.ybr);
         }
         Ok(())
     }
@@ -173,7 +175,7 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
                     .or_insert_with(Default::default)
                     .gtruth;
             for sign in gt_rdr.deserialize() {
-                let sign: SignAnnotation = sign?;
+                let mut sign: SignAnnotation = sign?;
                 sign.bbox.check()?;
                 entry.push(sign);
             }
@@ -187,7 +189,7 @@ pub fn read_files(gt_path: &Path, sol_path: &Path) -> Result<SignIndex> {
         .from_reader(reader);
     for record in sol_rdr.deserialize() {
         let SolutionRecord { frame, bbox, class, temporary, data } = record?;
-        let sign = SignDetection { bbox, class, temporary, data };
+        let mut sign = SignDetection { bbox, class, temporary, data };
         sign.bbox.check()?;
         let bbox = sign.bbox;
         // ignore signs with an area smaller than 100 pixels
