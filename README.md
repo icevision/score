@@ -2,7 +2,7 @@
 
 Scoring software used in the IceVision competition.
 
-The version used during online stage had version [`v0.1.5`](https://github.com/icevision/score/tree/v0.1.5).
+During online stage version [`v0.1.5`](https://github.com/icevision/score/tree/v0.1.5) was used.
 
 ## Input file formats
 

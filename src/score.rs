@@ -67,7 +67,11 @@ fn compute_k1(gt: SignClass, det: SignClass) -> Option<i32> {
 
 fn compute_k2(gt: &SignAnnotation, det: &SignDetection) -> i32 {
     fn normalize(s: &str) -> String {
-        s.chars().filter(|&c| c != ' ').collect::<String>().to_lowercase()
+        s.chars()
+            .filter(|&c| c != ' ')
+            .map(|c| if c == ',' { '.' } else { c })
+            .collect::<String>()
+            .to_lowercase()
     }
 
     match (&gt.data, &det.data) {
